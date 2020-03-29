@@ -9,10 +9,14 @@ import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+//import android.support.annotation.RequiresApi;
+//import android.support.v7.app.AlertDialog;
+//import android.support.v7.app.AppCompatActivity;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,8 +26,10 @@ import android.widget.TextView;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.AugmentedImage;
 import com.google.ar.core.Frame;
+import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
+import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.sceneform.AnchorNode;
@@ -36,6 +42,7 @@ import com.google.ar.sceneform.rendering.Renderable;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
+import com.google.ar.schemas.sceneform.LightingDef;
 import com.wonderkiln.camerakit.CameraKitError;
 import com.wonderkiln.camerakit.CameraKitEvent;
 import com.wonderkiln.camerakit.CameraKitEventListener;
@@ -60,20 +67,21 @@ public class MainActivity extends AppCompatActivity {
     private Classifier classifier;
 
     private Executor executor = Executors.newSingleThreadExecutor();
-    private TextView textViewResult;
-    private Button btnDetectObject, btnToggleCamera;
-    private ImageView imageViewResult;
+//    private TextView textViewResult;
+//    private Button btnDetectObject, btnToggleCamera;
+//    private ImageView imageViewResult;
     private ArFragment fragment;
 
     Boolean hasplace=false;
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        imageViewResult = findViewById(R.id.imageViewResult);
-        textViewResult = findViewById(R.id.textViewResult);
-        textViewResult.setMovementMethod(new ScrollingMovementMethod());
+//        imageViewResult = findViewById(R.id.imageViewResult);
+//        textViewResult = findViewById(R.id.textViewResult);
+//        textViewResult.setMovementMethod(new ScrollingMovementMethod());
 
         fragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.cameraView);
         fragment.getPlaneDiscoveryController().hide();
@@ -81,12 +89,33 @@ public class MainActivity extends AppCompatActivity {
 
         fragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdateFrame);
 
-
-        btnToggleCamera = findViewById(R.id.btnToggleCamera);
-        btnDetectObject = findViewById(R.id.btnDetectObject);
+        fragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
+//            placeObject(fragment, Uri.parse("shoe.sfb"), " ");
+            Anchor anchor = hitResult.createAnchor();
+            ModelRenderable.builder().setSource(this, Uri.parse("shoe.sfb")).build()
+                    .thenAccept(modelRenderable -> addModelToScene(anchor, modelRenderable))
+                    .exceptionally(throwable -> {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setMessage(throwable.getMessage()).show();
+                        return null;
+                    });
+        });
+//        btnToggleCamera = findViewById(R.id.btnToggleCamera);
+//        btnDetectObject = findViewById(R.id.btnDetectObject);
 
 
         initTensorFlowAndLoadModel();
+    }
+
+    private void addModelToScene(Anchor anchor, ModelRenderable modelRenderable) {
+        AnchorNode anchorNode = new AnchorNode(anchor);
+        TransformableNode transformableNode = new TransformableNode(fragment.getTransformationSystem());
+        transformableNode.setParent(anchorNode);
+        transformableNode.setRenderable(modelRenderable);
+        transformableNode.getScaleController().setMaxScale(0.3f);
+        transformableNode.getScaleController().setMinScale(0.29f);
+        fragment.getArSceneView().getScene().addChild(anchorNode);
+        transformableNode.select();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -133,29 +162,29 @@ public class MainActivity extends AppCompatActivity {
             yuvImage.compressToJpeg(new Rect(0, 0, cameraImage.getWidth(), cameraImage.getHeight()), 75, baOutputStream);
             byte[] byteForBitmap = baOutputStream.toByteArray();
             Bitmap bitmap = BitmapFactory.decodeByteArray(byteForBitmap, 0, byteForBitmap.length);
-            imageViewResult.setImageBitmap(bitmap);
+//            imageViewResult.setImageBitmap(bitmap);
             cameraImage.close();
 
 
-                bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
+            bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
 
-                imageViewResult.setImageBitmap(bitmap);
+//                imageViewResult.setImageBitmap(bitmap);
 
-                final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
-                Log.d("resultsize", String.valueOf(results.size()));
+            final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
+            Log.d("resultsize", String.valueOf(results.size()));
 
-            textViewResult.setText(String.valueOf(results));
-                if (results.size()>0) {
-                    if (!String.valueOf(results.get(0)).equals("null")&&!hasplace) {
-                        if (String.valueOf(results.get(0).getTitle()).equals("laptop")){
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            hasplace = true;
-                            placeObject(fragment, Uri.parse("laptop.sfb"), " ");
-                        }
-
-                        }
-                    }
-                }
+//            textViewResult.setText(String.valueOf(results));
+//            if (results.size()>0) {
+//                if (!String.valueOf(results.get(0)).equals("null")&&!hasplace) {
+//                    if (String.valueOf(results.get(0).getTitle()).equals("monitor")){
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//                            hasplace = true;
+//                            placeObject(fragment, Uri.parse("laptop.sfb"), " ");
+//                        }
+//
+//                    }
+//                }
+//            }
 
 
         }catch (NotYetAvailableException e) {
@@ -205,27 +234,30 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public void placeObject(ArFragment fragment, Uri model, String name){
-
+//        Frame frame = this.fragment.getArSceneView().getArFrame();
+//        Collection<Plane> planes = frame.getUpdatedTrackables(Plane.class);
+//        Plane firstPlane = planes.iterator().next();
         Session session = fragment.getArSceneView().getSession();
         Pose p =fragment.getArSceneView().getArFrame().getCamera().getPose();
-        float[] pos = p.getTranslation();
+//        float[] pos = p.getTranslation();
+        float[] pos = {0,0,-1};
         float[] rotation = {0,0,0,1};
+//        Anchor anchor =  session.createAnchor(new Pose(pos,rotation));
         Anchor anchor =  session.createAnchor(new Pose(pos,rotation));
 
 
-
         ModelRenderable.builder()
-                .setSource(fragment.getContext(),model)
-                .build()
-                .thenAccept(renderable -> addnodetoscene(fragment, anchor, renderable))
-                .exceptionally(throwable -> {
-                    Log.d("enter1",throwable.getMessage());
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setMessage(throwable.getMessage()).setTitle("Error");
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-                    return null;
-                });
+            .setSource(fragment.getContext(),model)
+            .build()
+            .thenAccept(renderable -> addnodetoscene(fragment, anchor, renderable))
+            .exceptionally(throwable -> {
+                Log.d("enter1",throwable.getMessage());
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage(throwable.getMessage()).setTitle("Error");
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                return null;
+            });
 
 
     }

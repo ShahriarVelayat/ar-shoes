@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Android-TensorFlow-Lite-Example.iml" filepath="$PROJECT_DIR$/Android-TensorFlow-Lite-Example.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="feet_detection/app" />
+      <module fileurl="file://$PROJECT_DIR$/feet_detection.iml" filepath="$PROJECT_DIR$/feet_detection.iml" group="feet_detection" />
     </modules>
   </component>
 </project>

@@ -46,3 +46,8 @@ sceneform.asset('sampledata/laptop/laptop.obj',
         'default',
         'sampledata/laptop/laptop.sfa',
         'src/main/assets/laptop')
+
+sceneform.asset('sampledata/shoe/Trainers_01.obj',
+        'default',
+        'sampledata/shoe/Trainers_01.sfa',
+        'src/main/assets/shoe')
